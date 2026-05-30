@@ -1,0 +1,33 @@
+query RunInput {
+  shop {
+    metafield(namespace: "discount_rules", key: "bundle_rules") {
+      value
+    }
+  }
+  cart {
+    lines {
+      id
+      quantity
+      cost {
+        totalAmount {
+          amount
+        }
+      }
+      merchandise {
+        ... on ProductVariant {
+          __typename
+          id
+          product {
+            inCollections(ids: [
+              "gid://shopify/Collection/530120147246",
+              "gid://shopify/Collection/436292092206"
+            ]) {
+              collectionId
+              isMember
+            }
+          }
+        }
+      }
+    }
+  }
+}
