@@ -70,6 +70,29 @@ export async function action({ request }) {
   const shopData = await shopResponse.json();
   const shopId = shopData.data.shop.id;
 
+  // Har active rule ke liye collection ke product IDs fetch karo
+  const rulesWithProducts = await Promise.all(
+    activeRules.map(async (r) => {
+      const productsResponse = await admin.graphql(`
+        query getCollectionProducts($id: ID!) {
+          collection(id: $id) {
+            products(first: 250) {
+              edges { node { id } }
+            }
+          }
+        }
+      `, { variables: { id: r.collectionId } });
+      const productsData = await productsResponse.json();
+      const productIds = productsData.data.collection?.products?.edges?.map(e => e.node.id) ?? [];
+      return {
+        quantity: r.quantity,
+        price: r.price,
+        collectionId: r.collectionId,
+        productIds,
+      };
+    })
+  );
+
   const metafieldResponse = await admin.graphql(`
     mutation SetMetafield($metafields: [MetafieldsSetInput!]!) {
       metafieldsSet(metafields: $metafields) {
@@ -83,11 +106,7 @@ export async function action({ request }) {
         namespace: "discount_rules",
         key: "bundle_rules",
         type: "json",
-        value: JSON.stringify(activeRules.map(r => ({
-          quantity: r.quantity,
-          price: r.price,
-          collectionId: r.collectionId,
-        }))),
+        value: JSON.stringify(rulesWithProducts),
         ownerId: shopId,
       }]
     }
