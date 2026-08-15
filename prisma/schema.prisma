@@ -34,7 +34,7 @@ model Session {
 }
 model DiscountRule {
   id           String   @id @default(cuid())
-  shop         String
+  shop         String   @default("") // temporary default so `prisma db push` can add this column to existing rows without data loss
   quantity     Int
   price        Float
   collectionId String   // Collection GID
