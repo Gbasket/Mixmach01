@@ -1,0 +1,99 @@
+{
+  "payload": {
+    "export": "cart-lines-discounts-generate-run",
+    "target": "cart.lines.discounts.generate.run",
+    "input": {
+      "shop": {
+        "metafield": {
+          "value": "[{\"quantity\":2,\"price\":150,\"collectionId\":\"gid://shopify/Collection/1\",\"productIds\":[\"gid://shopify/Product/1\"]},{\"quantity\":3,\"price\":499,\"collectionId\":\"gid://shopify/Collection/2\",\"productIds\":[\"gid://shopify/Product/2\"]}]"
+        }
+      },
+      "cart": {
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/0",
+            "quantity": 2,
+            "cost": {
+              "totalAmount": {
+                "amount": "200.00"
+              }
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/1",
+              "product": {
+                "id": "gid://shopify/Product/1"
+              }
+            }
+          },
+          {
+            "id": "gid://shopify/CartLine/1",
+            "quantity": 3,
+            "cost": {
+              "totalAmount": {
+                "amount": "900.00"
+              }
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/2",
+              "product": {
+                "id": "gid://shopify/Product/2"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "output": {
+      "operations": [
+        {
+          "productDiscountsAdd": {
+            "candidates": [
+              {
+                "message": "Any 2 for ₹150",
+                "targets": [
+                  {
+                    "cartLine": {
+                      "id": "gid://shopify/CartLine/0"
+                    }
+                  }
+                ],
+                "value": {
+                  "fixedAmount": {
+                    "amount": "50.00",
+                    "appliesToEachItem": false
+                  }
+                }
+              }
+            ],
+            "selectionStrategy": "FIRST"
+          }
+        },
+        {
+          "productDiscountsAdd": {
+            "candidates": [
+              {
+                "message": "Any 3 for ₹499",
+                "targets": [
+                  {
+                    "cartLine": {
+                      "id": "gid://shopify/CartLine/1"
+                    }
+                  }
+                ],
+                "value": {
+                  "fixedAmount": {
+                    "amount": "401.00",
+                    "appliesToEachItem": false
+                  }
+                }
+              }
+            ],
+            "selectionStrategy": "FIRST"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -3,8 +3,37 @@ import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import { useState } from "react";
 
+async function fetchAllCollectionProductIds(admin, collectionId) {
+  const productIds = [];
+  let cursor = null;
+  let hasNextPage = true;
+
+  while (hasNextPage) {
+    const productsResponse = await admin.graphql(
+      `
+        query getCollectionProducts($id: ID!, $cursor: String) {
+          collection(id: $id) {
+            products(first: 250, after: $cursor) {
+              edges { node { id } }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+      `,
+      { variables: { id: collectionId, cursor } },
+    );
+    const productsData = await productsResponse.json();
+    const products = productsData.data.collection?.products;
+    productIds.push(...(products?.edges?.map((e) => e.node.id) ?? []));
+    hasNextPage = products?.pageInfo?.hasNextPage ?? false;
+    cursor = products?.pageInfo?.endCursor ?? null;
+  }
+
+  return productIds;
+}
+
 export async function loader({ request }) {
-  const { admin } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
 
   // Collections fetch करें
   const response = await admin.graphql(`
@@ -23,6 +52,7 @@ export async function loader({ request }) {
   const collections = data.data.collections.edges.map((e) => e.node);
 
   const rules = await db.discountRule.findMany({
+    where: { shop: session.shop },
     orderBy: { quantity: "asc" },
   });
 
@@ -30,39 +60,59 @@ export async function loader({ request }) {
 }
 
 export async function action({ request }) {
-  const { admin } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
+  const { shop } = session;
   const formData = await request.formData();
   const intent = formData.get("intent");
 
   if (intent === "create") {
+    const quantity = parseInt(formData.get("quantity"), 10);
+    const price = parseFloat(formData.get("price"));
+    const collectionId = formData.get("collectionId");
+    const collectionTitle = formData.get("collectionTitle");
+
+    if (
+      !Number.isInteger(quantity) ||
+      quantity <= 0 ||
+      !Number.isFinite(price) ||
+      price <= 0 ||
+      !collectionId ||
+      !collectionTitle
+    ) {
+      return { success: false, errors: [{ message: "अमान्य rule: quantity और price 0 से बड़े होने चाहिए, और collection चुनना ज़रूरी है।" }] };
+    }
+
     await db.discountRule.create({
       data: {
-        quantity: parseInt(formData.get("quantity")),
-        price: parseFloat(formData.get("price")),
-        collectionId: formData.get("collectionId"),
-        collectionTitle: formData.get("collectionTitle"),
+        shop,
+        quantity,
+        price,
+        collectionId,
+        collectionTitle,
       },
     });
   }
 
   if (intent === "delete") {
-    await db.discountRule.delete({
-      where: { id: formData.get("id") },
+    await db.discountRule.deleteMany({
+      where: { id: formData.get("id"), shop },
     });
   }
 
   if (intent === "toggle") {
-    const rule = await db.discountRule.findUnique({
-      where: { id: formData.get("id") },
+    const rule = await db.discountRule.findFirst({
+      where: { id: formData.get("id"), shop },
     });
-    await db.discountRule.update({
-      where: { id: formData.get("id") },
-      data: { isActive: !rule?.isActive },
-    });
+    if (rule) {
+      await db.discountRule.update({
+        where: { id: rule.id },
+        data: { isActive: !rule.isActive },
+      });
+    }
   }
 
   const activeRules = await db.discountRule.findMany({
-    where: { isActive: true },
+    where: { isActive: true, shop },
     orderBy: { quantity: "asc" },
   });
 
@@ -73,17 +123,7 @@ export async function action({ request }) {
   // Har active rule ke liye collection ke product IDs fetch karo
   const rulesWithProducts = await Promise.all(
     activeRules.map(async (r) => {
-      const productsResponse = await admin.graphql(`
-        query getCollectionProducts($id: ID!) {
-          collection(id: $id) {
-            products(first: 250) {
-              edges { node { id } }
-            }
-          }
-        }
-      `, { variables: { id: r.collectionId } });
-      const productsData = await productsResponse.json();
-      const productIds = productsData.data.collection?.products?.edges?.map(e => e.node.id) ?? [];
+      const productIds = await fetchAllCollectionProductIds(admin, r.collectionId);
       return {
         quantity: r.quantity,
         price: r.price,
