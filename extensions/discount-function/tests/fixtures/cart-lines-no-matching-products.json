@@ -4,16 +4,18 @@
     "target": "cart.lines.discounts.generate.run",
     "input": {
       "shop": {
-        "metafield": null
+        "metafield": {
+          "value": "[{\"quantity\":2,\"price\":150,\"collectionId\":\"gid://shopify/Collection/1\",\"productIds\":[\"gid://shopify/Product/999\"]}]"
+        }
       },
       "cart": {
         "lines": [
           {
             "id": "gid://shopify/CartLine/0",
-            "quantity": 1,
+            "quantity": 2,
             "cost": {
               "totalAmount": {
-                "amount": "100.0"
+                "amount": "200.00"
               }
             },
             "merchandise": {

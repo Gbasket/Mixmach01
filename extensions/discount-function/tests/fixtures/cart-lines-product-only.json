@@ -3,20 +3,30 @@
     "export": "cart-lines-discounts-generate-run",
     "target": "cart.lines.discounts.generate.run",
     "input": {
+      "shop": {
+        "metafield": {
+          "value": "[{\"quantity\":3,\"price\":499,\"collectionId\":\"gid://shopify/Collection/1\",\"productIds\":[\"gid://shopify/Product/1\"]}]"
+        }
+      },
       "cart": {
         "lines": [
           {
             "id": "gid://shopify/CartLine/0",
+            "quantity": 3,
             "cost": {
-              "subtotalAmount": {
-                "amount": "100.0"
+              "totalAmount": {
+                "amount": "900.00"
+              }
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/1",
+              "product": {
+                "id": "gid://shopify/Product/1"
               }
             }
           }
         ]
-      },
-      "discount": {
-        "discountClasses": ["PRODUCT"]
       }
     },
     "output": {
@@ -25,7 +35,7 @@
           "productDiscountsAdd": {
             "candidates": [
               {
-                "message": "20% OFF PRODUCT",
+                "message": "Any 3 for ₹499",
                 "targets": [
                   {
                     "cartLine": {
@@ -34,8 +44,9 @@
                   }
                 ],
                 "value": {
-                  "percentage": {
-                    "value": 20.0
+                  "fixedAmount": {
+                    "amount": "401.00",
+                    "appliesToEachItem": false
                   }
                 }
               }

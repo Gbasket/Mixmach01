@@ -3,11 +3,13 @@
     "export": "cart-lines-discounts-generate-run",
     "target": "cart.lines.discounts.generate.run",
     "input": {
+      "shop": {
+        "metafield": {
+          "value": "[{\"quantity\":3,\"price\":499,\"collectionId\":\"gid://shopify/Collection/1\",\"productIds\":[\"gid://shopify/Product/1\"]}]"
+        }
+      },
       "cart": {
         "lines": []
-      },
-      "discount": {
-        "discountClasses": ["ORDER", "PRODUCT"]
       }
     },
     "output": {
